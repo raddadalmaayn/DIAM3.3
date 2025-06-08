@@ -1,5 +1,7 @@
 # DIAM3.3 Provenance
 # Lightweight Provenance for Additive Manufacturing using Hyperledger Fabric
+https://notebooklm.google.com/notebook/cf67fb48-03c9-4ed7-a241-1c2ce2132fb0/audio
+
 
 This repository contains the source code and instructions for a blockchain-based proof-of-concept designed to provide a lightweight, efficient, and auditable provenance trail for components produced via Additive Manufacturing (AM).
 
