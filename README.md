@@ -803,12 +803,18 @@ echo "--- Test complete. ---"
 
 
 
-5.2 node.js test file
 
+
+
+
+
+
+
+5.2 node.js test file
 'use strict';
 
 const { connect, Contract, Identity, Signer, signers } = require('@hyperledger/fabric-gateway');
-const grpc = require('@grpc/grpc-js'); // Added grpc import
+const grpc = require('@grpc/grpc-js');
 const crypto = require('crypto');
 const fs = require('fs').promises;
 const path = require('path');
@@ -830,30 +836,64 @@ const tlsCertPath = path.resolve(cryptoPath, 'peers', 'peer0.org1.example.com', 
 const peerEndpoint = 'localhost:7051';
 // Gateway peer SSL host name override.
 const peerHostAlias = 'peer0.org1.example.com';
+const testRuns = 3; // Number of times to run each test for averaging
 
 async function main() {
-    console.log('--- Starting Performance Test ---');
+    console.log('--- Starting Final Performance & Stress Test ---');
 
-    // The gRPC client connection should be shared by all Gateway connections to this endpoint.
     const client = await newGrpcConnection();
     const gateway = connect({
         client,
         identity: await newIdentity(),
         signer: await newSigner(),
-        evaluateOptions: () => ({ deadline: Date.now() + 5000 }), // 5 seconds
-        endorseOptions: () => ({ deadline: Date.now() + 15000 }), // 15 seconds
-        submitOptions: () => ({ deadline: Date.now() + 120000 }), // Increased to 120 seconds for large payloads
-        commitStatusOptions: () => ({ deadline: Date.now() + 120000 }), // Increased to 120 seconds
+        evaluateOptions: () => ({ deadline: Date.now() + 5000 }),
+        endorseOptions: () => ({ deadline: Date.now() + 15000 }),
+        submitOptions: () => ({ deadline: Date.now() + 120000 }),
+        commitStatusOptions: () => ({ deadline: Date.now() + 120000 }),
     });
 
     try {
         const contract = gateway.getNetwork(channelName).getContract(chaincodeName);
 
-        // === Test 1: Lightweight Model ===
-        await testLightweight(contract);
+        // --- Warm-up Run ---
+        console.log('--- Performing warm-up transaction... ---');
+        await testLightweight(contract, true);
 
-        // === Test 2: Naive Model with 1MB Payload ===
-        await testNaive(contract, 1 * 1024 * 1024); // 1 MB
+        // === Lightweight Model Test ===
+        const lightweightLatencies = [];
+        console.log(`\n--- Testing Lightweight Model (${testRuns} runs) ---`);
+        for (let i = 0; i < testRuns; i++) {
+            const latency = await testLightweight(contract);
+            lightweightLatencies.push(latency);
+            await sleep(1000); 
+        }
+        const lightweightAvg = lightweightLatencies.reduce((a, b) => a + b, 0) / lightweightLatencies.length;
+
+        // === Naive Model (1MB) Test ===
+        const naive1MB_Latencies = [];
+        console.log(`\n--- Testing Naive Model with 1MB Payload (${testRuns} runs) ---`);
+        for (let i = 0; i < testRuns; i++) {
+            const latency = await testNaive(contract, 1 * 1024 * 1024);
+            naive1MB_Latencies.push(latency);
+            await sleep(1000);
+        }
+        const naive1MB_Avg = naive1MB_Latencies.reduce((a, b) => a + b, 0) / naive1MB_Latencies.length;
+        
+        // === Naive Model (2MB) Stress Test ===
+        console.log(`\n--- Stress Testing Naive Model with 2MB Payload ---`);
+        await testNaive(contract, 2 * 1024 * 1024);
+
+        // === Naive Model (5MB) Stress Test ===
+        console.log(`\n--- Stress Testing Naive Model with 5MB Payload ---`);
+        await testNaive(contract, 5 * 1024 * 1024);
+
+
+        // --- Final Results Summary ---
+        console.log(`\n\n==================== FINAL RESULTS ====================`);
+        console.log(`*** Lightweight Model Avg. Latency:      ${lightweightAvg.toFixed(2)} ms`);
+        console.log(`*** Naive Model (1MB) Avg. Latency:      ${naive1MB_Avg.toFixed(2)} ms`);
+        console.log(`--- Performance Gap (1MB): Naive model is approximately ${(naive1MB_Avg / lightweightAvg).toFixed(1)}x slower.`);
+        console.log(`=======================================================`);
 
     } finally {
         gateway.close();
@@ -861,13 +901,11 @@ async function main() {
     }
 }
 
-async function testLightweight(contract) {
-    console.log('\n--- Testing Lightweight Model ---');
+async function testLightweight(contract, isWarmup = false) {
     const assetId = `MATERIAL_BATCH_${Date.now()}`;
     const offChainHash = crypto.createHash('sha256').update('small payload').digest('hex');
-
+    const startTime = process.hrtime.bigint();
     try {
-        const startTime = process.hrtime.bigint();
         await contract.submitTransaction(
             'CreateMaterialCertification',
             assetId,
@@ -877,25 +915,30 @@ async function testLightweight(contract) {
             offChainHash
         );
         const endTime = process.hrtime.bigint();
-        const latencyMs = (endTime - startTime) / 1000000n;
-        console.log(`*** SUCCESS: Lightweight transaction committed.`);
-        console.log(`*** KPI: Transaction Latency = ${latencyMs} ms`);
+        const latencyMs = Number((endTime - startTime) / 1000000n);
+        if (!isWarmup) {
+            console.log(`Run complete. Latency: ${latencyMs} ms`);
+            return latencyMs;
+        } else {
+            console.log('Warm-up complete.');
+            return 0; // Don't return a value for warmup
+        }
     } catch (error) {
-        console.error('*** FAILED: Lightweight transaction failed:', error);
+        console.error('Lightweight test failed:', error);
+        return -1; // Indicate failure
     }
 }
 
 async function testNaive(contract, payloadSize) {
-    console.log(`\n--- Testing Naive Model with ${payloadSize / (1024*1024)}MB Payload ---`);
     const assetId = `NAIVE_BATCH_${Date.now()}`;
-    
     // Create a large dummy payload
     const payload = crypto.randomBytes(payloadSize).toString('base64');
-    console.log(`Payload created. Size: ${Buffer.byteLength(payload, 'utf8')} bytes.`);
+    const payloadMB = (payloadSize / (1024 * 1024)).toFixed(1);
 
+    console.log(`Submitting naive transaction with ${payloadMB}MB payload...`);
+    
+    const startTime = process.hrtime.bigint();
     try {
-        const startTime = process.hrtime.bigint();
-        console.log('Submitting naive transaction... This will take some time.');
         await contract.submitTransaction(
             'CreateMaterialCertification_Naive',
             assetId,
@@ -905,32 +948,33 @@ async function testNaive(contract, payloadSize) {
             payload
         );
         const endTime = process.hrtime.bigint();
-        const latencyMs = (endTime - startTime) / 1000000n;
-        console.log(`*** SUCCESS: Naive transaction committed.`);
-        console.log(`*** KPI: Transaction Latency = ${latencyMs} ms`);
-
-    } catch (error) {
-        console.error('*** FAILED: Naive transaction failed:', error);
+        const latencyMs = Number((endTime - startTime) / 1000000n);
+        console.log(`*** SUCCESS: Naive transaction (${payloadMB}MB) committed. Latency: ${latencyMs} ms`);
+        return latencyMs;
+    } catch(error) {
+        console.error(`*** FAILED: Naive transaction (${payloadMB}MB) failed. Error message:`);
+        console.error(error.message); // Print just the concise error message
+        return -1; // Indicate failure
     }
 }
 
-
-// --- Helper Functions for Connection ---
-
-// newGrpcConnection creates a gRPC connection to a Hyperledger Fabric peer.
+// --- Helper Functions ---
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
 async function newGrpcConnection() {
     const tlsRootCert = await fs.readFile(tlsCertPath);
     const tlsCredentials = grpc.credentials.createSsl(tlsRootCert);
     return new grpc.Client(peerEndpoint, tlsCredentials, {
         'grpc.ssl_target_name_override': peerHostAlias,
+        'grpc.max_send_message_length': -1, // Allow sending large messages
+        'grpc.max_receive_message_length': -1, // Allow receiving large messages
     });
 }
-
 async function newIdentity() {
     const cert = await fs.readFile(certPath);
     return { mspId, credentials: cert };
 }
-
 async function newSigner() {
     const files = await fs.readdir(keyDirectoryPath);
     const keyPath = path.resolve(keyDirectoryPath, files[0]);
