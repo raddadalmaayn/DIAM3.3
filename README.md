@@ -301,7 +301,38 @@ To shut down the Fabric test network and remove all containers, run the followin
 ```bash
 ./network.sh down
 
-## 4. Analysing
+
+
+
+4. Performance Analysis (KPI Measurement)
+In this section, we measure the Transaction Latency to quantitatively compare our lightweight model against a naive model that stores large data payloads on-chain.
+
+4.1. Measuring Lightweight Model Latency (Baseline)
+We will invoke the CreateMaterialCertification function three times and measure the wall-clock time for each transaction to establish a performance baseline.
+
+Set Environment Variables: Configure your terminal to act as Org1's admin.
+
+# Run these from the test-network directory
+export PATH=${PWD}/../bin:$PATH
+export FABRIC_CFG_PATH=$PWD/../config/
+export CORE_PEER_TLS_ENABLED=true
+export CORE_PEER_LOCALMSPID="Org1MSP"
+export CORE_PEER_TLS_ROOTCERT_FILE=${PWD}/organizations/peerOrganizations/[org1.example.com/peers/peer0.org1.example.com/tls/ca.crt](https://org1.example.com/peers/peer0.org1.example.com/tls/ca.crt)
+export CORE_PEER_MSPCONFIGPATH=${PWD}/organizations/peerOrganizations/[org1.example.com/users/Admin@org1.example.com/msp](https://org1.example.com/users/Admin@org1.example.com/msp)
+export CORE_PEER_ADDRESS=localhost:7051
+
+Run the tests: Use the time command and invoke the chaincode with unique asset IDs for each run.
+
+# Run #1
+time peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/[example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem](https://example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem)" -C mychannel -n amprovenance --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/[org1.example.com/peers/peer0.org1.example.com/tls/ca.crt](https://org1.example.com/peers/peer0.org1.example.com/tls/ca.crt)" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/[org2.example.com/peers/peer0.org2.example.com/tls/ca.crt](https://org2.example.com/peers/peer0.org2.example.com/tls/ca.crt)" -c '{"function":"CreateMaterialCertification","Args":["MATERIAL_BATCH_002", "Ti6Al4V", "POWDER-ABC-123", "SupplierCorpMSP", "f2d81a260dea8d14f0f044c4188c89b43332d3493e8f370851a705128723f5d5"]}'
+
+# Run #2
+time peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/[example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem](https://example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem)" -C mychannel -n amprovenance --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/[org1.example.com/peers/peer0.org1.example.com/tls/ca.crt](https://org1.example.com/peers/peer0.org1.example.com/tls/ca.crt)" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/[org2.example.com/peers/peer0.org2.example.com/tls/ca.crt](https://org2.example.com/peers/peer0.org2.example.com/tls/ca.crt)" -c '{"function":"CreateMaterialCertification","Args":["MATERIAL_BATCH_003", "Ti6Al4V", "POWDER-DEF-456", "SupplierCorpMSP", "a6e1a2d189196724a8e2f0d9a5b3a1c0d8e2f0d9a5b3a1c0d8e2f0d9a5b3a1c0"]}'
+
+# Run #3
+time peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/[example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem](https://example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem)" -C mychannel -n amprovenance --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/[org1.example.com/peers/peer0.org1.example.com/tls/ca.crt](https://org1.example.com/peers/peer0.org1.example.com/tls/ca.crt)" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/[org2.example.com/peers/peer0.org2.example.com/tls/ca.crt](https://org2.example.com/peers/peer0.org2.example.com/tls/ca.crt)" -c '{"function":"CreateMaterialCertification","Args":["MATERIAL_BATCH_004", "Inconel718", "POWDER-GHI-789", "SupplierCorpMSP", "b7f1b2e189196724a8e2f0d9a5
+
+## 5. Analysing
 
 https://g.co/gemini/share/f9a73166be43
 
