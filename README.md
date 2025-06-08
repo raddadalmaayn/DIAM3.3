@@ -983,6 +983,72 @@ async function newSigner() {
     return signers.newPrivateKeySigner(privateKey);
 }
 
+
+
+
+
+results on a chart :
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# --- Data from our final tests ---
+# Labels for the x-axis, ordered logically
+labels = [
+    'Lightweight\n(~270 Bytes)',
+    'Naive\n(10 KB)',
+    'Naive\n(20 KB)',
+    'Naive\n(50 KB)',
+    'Naive\n(150 KB)',
+    'Naive\n(2 MB)',
+    'Naive\n(5 MB)'
+]
+
+# Corresponding latency values in milliseconds
+latencies = [47, 128, 108, 160, 148, 531, 1012]
+
+# --- Chart Creation ---
+# Define colors: one for our model, and a gradient for the naive model
+colors = ['#007acc'] + plt.cm.Oranges(np.linspace(0.3, 0.8, len(latencies) - 1)).tolist()
+
+# Create the figure and axis objects
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Create the bar chart
+bars = ax.bar(labels, latencies, color=colors, width=0.6)
+
+# --- Styling and Labels ---
+# Add a title and clear axis labels
+ax.set_title('Transaction Latency Comparison: Lightweight vs. Naive Model', fontsize=16, pad=20)
+ax.set_ylabel('Average Latency (ms)', fontsize=12)
+ax.set_xlabel('Model and On-Chain Payload Size', fontsize=12)
+
+# Set the y-axis to start from 0 and add a little padding at the top
+ax.set_ylim(0, max(latencies) * 1.1)
+
+# Remove the top and right spines for a cleaner look
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+
+# Add a light grid for better readability
+ax.yaxis.grid(True, linestyle='--', which='major', color='grey', alpha=.25)
+
+# Add data labels on top of each bar
+for bar in bars:
+    yval = bar.get_height()
+    ax.text(bar.get_x() + bar.get_width()/2.0, yval, f'{int(yval)} ms', va='bottom', ha='center', fontsize=10) # va: vertical alignment
+
+# Improve layout to prevent labels from overlapping
+plt.xticks(rotation=15) # Rotate x-axis labels slightly
+plt.tight_layout()
+
+# Save the figure to a file
+# The high DPI (dots per inch) makes it suitable for publication
+plt.savefig('latency_chart.png', dpi=300)
+
+# Display the plot
+plt.show()
+
 main().catch(error => {
     console.error('******** FAILED to run the application', error);
     process.exitCode = 1;
