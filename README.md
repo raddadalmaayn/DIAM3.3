@@ -300,3 +300,104 @@ To shut down the Fabric test network and remove all containers, run the followin
 
 ```bash
 ./network.sh down
+
+## 4. Analysing
+
+https://g.co/gemini/share/f9a73166be43
+
+import json
+
+def calculate_byte_size(data_dict):
+    """Serializes a Python dictionary to a JSON string and returns its size in bytes."""
+    # Using separators=(',', ':') creates the most compact JSON representation.
+    json_string = json.dumps(data_dict, separators=(',', ':'))
+    return len(json_string.encode('utf-8'))
+
+# --- Define a sample event for each lifecycle stage ---
+# These structures match our Go chaincode exactly.
+# We include a 64-character hex string for the SHA-256 hash.
+off_chain_hash = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+
+# 1. Material Certification
+material_cert_event = {
+    "eventType": "MATERIAL_CERTIFICATION",
+    "agentID": "Org1MSP",
+    "timestamp": "2025-06-08T10:00:00Z",
+    "offChainDataHash": off_chain_hash,
+    "materialType": "Ti6Al4V",
+    "materialBatchID": "POWDER-XYZ-789",
+    "supplierID": "SupplierCorpMSP"
+}
+
+# 2. Design Finalization (Not in chaincode, but part of lifecycle)
+# For the sake of analysis, we'll create a hypothetical event for it.
+design_event = {
+    "eventType": "DESIGN_FINALIZATION",
+    "agentID": "Org1MSP",
+    "timestamp": "2025-06-08T11:00:00Z",
+    "offChainDataHash": off_chain_hash, # This would be the hash of the STL file
+    "designFileHash": off_chain_hash,
+    "designFileVersion": "v2.1.3"
+}
+
+# 3. Print Job Start
+print_start_event = {
+    "eventType": "PRINT_JOB_START",
+    "agentID": "Org1MSP",
+    "timestamp": "2025-06-08T12:00:00Z",
+    "offChainDataHash": off_chain_hash,
+    "machineID": "EOS-M290-SN123",
+    "materialBatchUsedID": "MATERIAL_BATCH_001",
+    "designFileHash": off_chain_hash,
+    "buildJobID": "BUILD-06082025-01"
+}
+
+# 4. Print Job Completion
+print_complete_event = {
+    "eventType": "PRINT_JOB_COMPLETION",
+    "agentID": "Org1MSP",
+    "timestamp": "2025-06-08T22:00:00Z",
+    "offChainDataHash": off_chain_hash,
+    "buildJobID": "BUILD-06082025-01",
+    "primaryInspectionResult": "PASS"
+}
+
+# 5. Post-Processing (Hypothetical event for analysis)
+post_process_event = {
+    "eventType": "POST_PROCESS_HEAT_TREATMENT",
+    "agentID": "Org1MSP",
+    "timestamp": "2025-06-09T09:00:00Z",
+    "offChainDataHash": off_chain_hash
+}
+
+# 6. QA & Certification
+qa_cert_event = {
+    "eventType": "QA_CERTIFY",
+    "agentID": "Org2MSP", # A different org does the QA
+    "timestamp": "2025-06-09T14:00:00Z",
+    "offChainDataHash": off_chain_hash,
+    "testStandardApplied": "AS9100",
+    "finalTestResult": "CERTIFIED_FIT_FOR_USE",
+    "certificateID": "QA-CERT-951"
+}
+
+# --- Calculate and print the sizes ---
+size_material = calculate_byte_size(material_cert_event)
+size_design = calculate_byte_size(design_event)
+size_start = calculate_byte_size(print_start_event)
+size_complete = calculate_byte_size(print_complete_event)
+size_post = calculate_byte_size(post_process_event)
+size_qa = calculate_byte_size(qa_cert_event)
+total_lightweight = size_material + size_design + size_start + size_complete + size_post + size_qa
+
+print("--- On-Chain Data Footprint (Lightweight Model) ---")
+print(f"1. Material Certification Event: {size_material} bytes")
+print(f"2. Design Finalization Event:    {size_design} bytes")
+print(f"3. Print Job Start Event:        {size_start} bytes")
+print(f"4. Print Job Completion Event:   {size_complete} bytes")
+print(f"5. Post-Processing Event:        {size_post} bytes")
+print(f"6. QA & Certification Event:     {size_qa} bytes")
+print("-----------------------------------------------------")
+print(f"TOTAL ON-CHAIN FOOTPRINT:        {total_lightweight} bytes")
+
+
