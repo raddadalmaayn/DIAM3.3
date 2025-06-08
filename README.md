@@ -989,6 +989,7 @@ async function newSigner() {
 
 results on a chart :
 
+
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -1053,4 +1054,7 @@ main().catch(error => {
     console.error('******** FAILED to run the application', error);
     process.exitCode = 1;
 });
+
+
+![image](https://github.com/user-attachments/assets/cebe680b-7bf6-4fec-a4cb-af3a3183e38f)
 
