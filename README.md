@@ -1441,7 +1441,7 @@ main().catch(error => {
 
 });
 ```
-
+<!--
 
 the test app version to measure the throughput 
 
@@ -1653,9 +1653,9 @@ the results with 10k sixe for the naive model
 
 The result with 50k file size for the naive model
 
-![image](https://github.com/user-attachments/assets/5eefd20c-3ad6-4c25-a326-9b0ffb23ac68)
+%![image](https://github.com/user-attachments/assets/5eefd20c-3ad6-4c25-a326-9b0ffb23ac68)
 
-
+-->
 
 ***The test app code for the throghput for the lightwight model vs the naive model with file sizes of 10KB, 50KB, 150KB, 1MB.  the test was to send 100 transactions to the network and measure the end-to-end total time and calculating the TPS
 ```python
