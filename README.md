@@ -1647,3 +1647,11 @@ main().catch(error => {
     process.exitCode = 1;
 });
 ```
+the results with 10k sixe for the naive model
+
+![Screenshot from 2025-06-19 01-11-28](https://github.com/user-attachments/assets/6711ac1c-75c9-4345-b68c-1572121a0c37)
+
+The result with 50k file size for the naive model
+
+![image](https://github.com/user-attachments/assets/5eefd20c-3ad6-4c25-a326-9b0ffb23ac68)
+
