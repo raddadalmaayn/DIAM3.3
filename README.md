@@ -341,7 +341,7 @@ https://g.co/gemini/share/f9a73166be43
 
 
 the lightwight smart contarct
-```
+```python
 import json
 
 def calculate_byte_size(data_dict):
@@ -440,7 +440,7 @@ print(f"TOTAL ON-CHAIN FOOTPRINT:        {total_lightweight} bytes")
 
 ### Step 5: the naive model
 the cobined model smart contract
-```
+```go
     package main
 
     import (
@@ -774,7 +774,7 @@ the cobined model smart contract
 ## 5.1
 
 creationg 1 MB file and getting argument too long
-```
+```bash
 #!/bin/bash
 
 echo "--- Preparing for Naive Model Performance Test (1MB Payload) ---"
@@ -818,7 +818,7 @@ echo "--- Test complete. ---"
 
 
 5.2 node.js test file
-```
+```python
 'use strict';
 
 const { connect, Contract, Identity, Signer, signers } = require('@hyperledger/fabric-gateway');
@@ -997,7 +997,7 @@ async function newSigner() {
 
 results on a chart :
 
-```
+```python
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -1068,7 +1068,7 @@ main().catch(error => {
 
 The test app code for the Latency testing
 
-```
+```python
 'use strict';
 
 
@@ -1445,7 +1445,7 @@ main().catch(error => {
 
 the test app version to measure the throughput 
 
-```
+```python
 
 'use strict';
 
