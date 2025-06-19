@@ -1931,7 +1931,7 @@ the table
 ![image](https://github.com/user-attachments/assets/185ac4fa-2bbd-4123-950e-08c12517e7f6)
 -->
 
-The Table 
+The Table (with running the code multiple times the average of the TPS for the 10KB is 128 and the rest is about the same of the table) 
 ![image](https://github.com/user-attachments/assets/a76dec41-6977-4857-9b7e-d355daf3b9b6)
 
 
