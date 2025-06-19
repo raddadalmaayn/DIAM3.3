@@ -1836,10 +1836,9 @@ main().catch(error => {
 });
 ```
 
-the rsult in the terminal for the test app for the throughput
+the result in the terminal for the test app for the throughput
 
 ```bash
-node latency_test.js
 --- Starting Final Comprehensive Performance & Throughput Test ---
 --- Performing warm-up transaction... ---
 Warm-up complete.
@@ -1857,8 +1856,8 @@ Batch 8 of 10 completed.
 Batch 9 of 10 completed.
 Batch 10 of 10 completed.
 *** SUCCESS: All 100 transactions committed.
-Total time: 0.66 seconds.
-Throughput: 152.21 TPS
+Total time: 0.63 seconds.
+Throughput: 159.24 TPS
 
 --- Testing Throughput: Naive (10KB) ---
 Submitting 100 transactions in chunks of 10, with 10KB payload each...
@@ -1873,8 +1872,8 @@ Batch 8 of 10 completed.
 Batch 9 of 10 completed.
 Batch 10 of 10 completed.
 *** SUCCESS: All 100 transactions committed.
-Total time: 0.78 seconds.
-Throughput: 127.55 TPS
+Total time: 0.70 seconds.
+Throughput: 142.65 TPS
 
 --- Testing Throughput: Naive (50KB) ---
 Submitting 100 transactions in chunks of 10, with 50KB payload each...
@@ -1889,8 +1888,8 @@ Batch 8 of 10 completed.
 Batch 9 of 10 completed.
 Batch 10 of 10 completed.
 *** SUCCESS: All 100 transactions committed.
-Total time: 1.50 seconds.
-Throughput: 66.84 TPS
+Total time: 1.31 seconds.
+Throughput: 76.34 TPS
 
 --- Testing Throughput: Naive (150KB) ---
 Submitting 100 transactions in chunks of 10, with 150KB payload each...
@@ -1905,17 +1904,34 @@ Batch 8 of 10 completed.
 Batch 9 of 10 completed.
 Batch 10 of 10 completed.
 *** SUCCESS: All 100 transactions committed.
-Total time: 2.95 seconds.
-Throughput: 33.88 TPS
+Total time: 3.01 seconds.
+Throughput: 33.23 TPS
 
 --- Testing Throughput: Naive (1MB) ---
 Submitting 100 transactions in chunks of 10, with 1024KB payload each...
-*** FAILED: Throughput test failed for payload size 1024KB. Error: 13 INTERNAL: Received RST_STREAM with code 2 (Internal server error)
+Batch 1 of 10 completed.
+Batch 2 of 10 completed.
+Batch 3 of 10 completed.
+Batch 4 of 10 completed.
+Batch 5 of 10 completed.
+Batch 6 of 10 completed.
+Batch 7 of 10 completed.
+Batch 8 of 10 completed.
+Batch 9 of 10 completed.
+Batch 10 of 10 completed.
+*** SUCCESS: All 100 transactions committed.
+Total time: 10.19 seconds.
+Throughput: 9.81 TPS
 
 
 ```
+<!--
 the table 
 
 ![image](https://github.com/user-attachments/assets/185ac4fa-2bbd-4123-950e-08c12517e7f6)
+-->
+
+The Table 
+![image](https://github.com/user-attachments/assets/a76dec41-6977-4857-9b7e-d355daf3b9b6)
 
 
