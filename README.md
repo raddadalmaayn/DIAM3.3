@@ -302,7 +302,7 @@ To shut down the Fabric test network and remove all containers, run the followin
 
 ```bash
 ./network.sh down
-
+```
 
 
 
@@ -335,9 +335,13 @@ time peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride ordere
 time peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride orderer.example.com --tls --cafile "${PWD}/organizations/ordererOrganizations/[example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem](https://example.com/orderers/orderer.example.com/msp/tlscacerts/tlsca.example.com-cert.pem)" -C mychannel -n amprovenance --peerAddresses localhost:7051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/[org1.example.com/peers/peer0.org1.example.com/tls/ca.crt](https://org1.example.com/peers/peer0.org1.example.com/tls/ca.crt)" --peerAddresses localhost:9051 --tlsRootCertFiles "${PWD}/organizations/peerOrganizations/[org2.example.com/peers/peer0.org2.example.com/tls/ca.crt](https://org2.example.com/peers/peer0.org2.example.com/tls/ca.crt)" -c '{"function":"CreateMaterialCertification","Args":["MATERIAL_BATCH_004", "Inconel718", "POWDER-GHI-789", "SupplierCorpMSP", "b7f1b2e189196724a8e2f0d9a5
 
 ## 5. Analysing
-
+```
 https://g.co/gemini/share/f9a73166be43
+```
 
+
+the lightwight smart contarct
+```
 import json
 
 def calculate_byte_size(data_dict):
@@ -432,10 +436,11 @@ print(f"5. Post-Processing Event:        {size_post} bytes")
 print(f"6. QA & Certification Event:     {size_qa} bytes")
 print("-----------------------------------------------------")
 print(f"TOTAL ON-CHAIN FOOTPRINT:        {total_lightweight} bytes")
-
+```
 
 ### Step 5: the naive model
-
+the cobined model smart contract
+```
     package main
 
     import (
@@ -765,11 +770,11 @@ print(f"TOTAL ON-CHAIN FOOTPRINT:        {total_lightweight} bytes")
     	}
     }
 
-
+```
 ## 5.1
 
 creationg 1 MB file and getting argument too long
-
+```
 #!/bin/bash
 
 echo "--- Preparing for Naive Model Performance Test (1MB Payload) ---"
@@ -802,7 +807,7 @@ time peer chaincode invoke -o localhost:7050 --ordererTLSHostnameOverride ordere
 rm large_payload.bin
 echo "--- Test complete. ---"
 
-
+```
 
 
 
@@ -813,6 +818,7 @@ echo "--- Test complete. ---"
 
 
 5.2 node.js test file
+```
 'use strict';
 
 const { connect, Contract, Identity, Signer, signers } = require('@hyperledger/fabric-gateway');
@@ -986,12 +992,12 @@ async function newSigner() {
 }
 
 
-
+```
 
 
 results on a chart :
 
-
+```
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -1057,6 +1063,587 @@ main().catch(error => {
     process.exitCode = 1;
 });
 
-
+```
 ![image](https://github.com/user-attachments/assets/cebe680b-7bf6-4fec-a4cb-af3a3183e38f)
 
+The test app code for the Latency testing
+
+```
+'use strict';
+
+
+
+const { connect, Contract, Identity, Signer, signers } = require('@hyperledger/fabric-gateway');
+
+const grpc = require('@grpc/grpc-js');
+
+const crypto = require('crypto');
+
+const fs = require('fs').promises;
+
+const path = require('path');
+
+
+
+// --- Configuration ---
+
+const channelName = 'mychannel';
+
+const chaincodeName = 'amprovenance';
+
+const mspId = 'Org1MSP';
+
+
+
+// Path to crypto materials.
+
+const cryptoPath = path.resolve(__dirname, '..', 'fabric', 'fabric-samples', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com');
+
+// Path to user private key directory.
+
+const keyDirectoryPath = path.resolve(cryptoPath, 'users', 'Admin@org1.example.com', 'msp', 'keystore');
+
+// Path to user certificate.
+
+const certPath = path.resolve(cryptoPath, 'users', 'Admin@org1.example.com', 'msp', 'signcerts', 'cert.pem');
+
+// Path to peer tls certificate.
+
+const tlsCertPath = path.resolve(cryptoPath, 'peers', 'peer0.org1.example.com', 'tls', 'ca.crt');
+
+// Gateway peer endpoint.
+
+const peerEndpoint = 'localhost:7051';
+
+// Gateway peer SSL host name override.
+
+const peerHostAlias = 'peer0.org1.example.com';
+
+
+
+// Payload sizes from the data footprint table
+
+const naivePayloads = [
+
+    { event: 'Material Certification', size: 50 * 1024 },    // 50KB
+
+    { event: 'Design Finalization', size: 2 * 1024 * 1024 }, // 2MB
+
+    { event: 'Print Job Start', size: 10 * 1024 },     // 10KB
+
+    { event: 'Print Job Completion', size: 5 * 1024 * 1024 }, // 5MB
+
+    { event: 'Post-Processing', size: 20 * 1024 },     // 20KB
+
+    { event: 'QA & Certification', size: 150 * 1024 }   // 150KB
+
+];
+
+
+
+async function main() {
+
+    console.log('--- Starting Comprehensive Lifecycle Performance Test ---');
+
+
+
+    const client = await newGrpcConnection();
+
+    const gateway = connect({
+
+        client,
+
+        identity: await newIdentity(),
+
+        signer: await newSigner(),
+
+        evaluateOptions: () => ({ deadline: Date.now() + 5000 }),
+
+        endorseOptions: () => ({ deadline: Date.now() + 15000 }),
+
+        submitOptions: () => ({ deadline: Date.now() + 120000 }),
+
+        commitStatusOptions: () => ({ deadline: Date.now() + 120000 }),
+
+    });
+
+
+
+    const results = [];
+
+
+
+    try {
+
+        const contract = gateway.getNetwork(channelName).getContract(chaincodeName);
+
+
+
+        // --- Warm-up Run ---
+
+        console.log('--- Performing warm-up transaction... ---');
+
+        await testLightweight(contract, true);
+
+
+
+        // === Lightweight Model Baseline ===
+
+        console.log(`\n--- Testing Lightweight Model ---`);
+
+        const lightweightLatency = await testLightweight(contract);
+
+        results.push({
+
+            'Test Case': 'Lightweight Model (Baseline)',
+
+            'Payload Size': '~270 Bytes',
+
+            'Latency (ms)': lightweightLatency.toFixed(2),
+
+            'Performance Factor': '1.0x'
+
+        });
+
+        await sleep(1000);
+
+
+
+        // === Naive Model Lifecycle Tests ===
+
+        for (const payloadInfo of naivePayloads) {
+
+            console.log(`\n--- Testing Naive Model: ${payloadInfo.event} ---`);
+
+            const naiveLatency = await testNaive(contract, payloadInfo.size, payloadInfo.event);
+
+            results.push({
+
+                'Test Case': `Naive Model: ${payloadInfo.event}`,
+
+                'Payload Size': `${(payloadInfo.size / 1024).toFixed(0)} KB`,
+
+                'Latency (ms)': naiveLatency > 0 ? naiveLatency.toFixed(2) : 'FAILED',
+
+                'Performance Factor': naiveLatency > 0 ? `~${(naiveLatency / lightweightLatency).toFixed(1)}x` : 'N/A'
+
+            });
+
+            await sleep(1000);
+
+        }
+
+
+
+    } finally {
+
+        gateway.close();
+
+        client.close();
+
+        printResultsTable(results);
+
+    }
+
+}
+
+
+
+async function testLightweight(contract, isWarmup = false) {
+
+    const assetId = `MATERIAL_BATCH_${Date.now()}`;
+
+    const offChainHash = crypto.createHash('sha256').update('small payload').digest('hex');
+
+    const startTime = process.hrtime.bigint();
+
+    try {
+
+        await contract.submitTransaction(
+
+            'CreateMaterialCertification',
+
+            assetId,
+
+            'Ti6Al4V',
+
+            'POWDER-SDK-123',
+
+            'SupplierCorpMSP',
+
+            offChainHash
+
+        );
+
+        const endTime = process.hrtime.bigint();
+
+        const latencyMs = Number((endTime - startTime) / 1000000n);
+
+        if (!isWarmup) {
+
+            console.log(`Run complete. Latency: ${latencyMs} ms`);
+
+            return latencyMs;
+
+        } else {
+
+            console.log('Warm-up complete.');
+
+            return 0; // Don't return a value for warmup
+
+        }
+
+    } catch (error) {
+
+        if (!isWarmup) console.error('Lightweight test failed:', error);
+
+        return -1; // Indicate failure
+
+    }
+
+}
+
+
+
+async function testNaive(contract, payloadSize, eventName) {
+
+    const assetId = `NAIVE_BATCH_${eventName.replace(/\s+/g, '')}_${Date.now()}`;
+
+    const payload = crypto.randomBytes(payloadSize).toString('base64');
+
+    const payloadKB = (payloadSize / 1024).toFixed(0);
+
+
+
+    console.log(`Submitting naive transaction with ${payloadKB}KB payload...`);
+
+    
+
+    const startTime = process.hrtime.bigint();
+
+    try {
+
+        await contract.submitTransaction(
+
+            'CreateMaterialCertification_Naive',
+
+            assetId,
+
+            'SS316L',
+
+            'POWDER-SDK-NAIVE',
+
+            'SupplierCorpMSP',
+
+            payload
+
+        );
+
+        const endTime = process.hrtime.bigint();
+
+        const latencyMs = Number((endTime - startTime) / 1000000n);
+
+        console.log(`*** SUCCESS: Naive transaction (${payloadKB}KB) committed. Latency: ${latencyMs} ms`);
+
+        return latencyMs;
+
+    } catch(error) {
+
+        console.error(`*** FAILED: Naive transaction (${payloadKB}KB) failed. Error message:`);
+
+        // We only print the error message to keep the log clean
+
+        console.error(error.message.split('\n')[0]);
+
+        return -1; // Indicate failure
+
+    }
+
+}
+
+
+
+function printResultsTable(results) {
+
+    console.log('\n\n==================== FINAL COMPREHENSIVE RESULTS ====================');
+
+    console.table(results);
+
+    console.log('=====================================================================');
+
+}
+
+
+
+// --- Helper Functions ---
+
+function sleep(ms) {
+
+    return new Promise(resolve => setTimeout(resolve, ms));
+
+}
+
+
+
+async function newGrpcConnection() {
+
+    const tlsRootCert = await fs.readFile(tlsCertPath);
+
+    const tlsCredentials = grpc.credentials.createSsl(tlsRootCert);
+
+    return new grpc.Client(peerEndpoint, tlsCredentials, {
+
+        'grpc.ssl_target_name_override': peerHostAlias,
+
+        'grpc.max_send_message_length': -1, // Allow sending large messages
+
+        'grpc.max_receive_message_length': -1, // Allow receiving large messages
+
+    });
+
+}
+
+
+
+async function newIdentity() {
+
+    const cert = await fs.readFile(certPath);
+
+    return { mspId, credentials: cert };
+
+}
+
+
+
+async function newSigner() {
+
+    const files = await fs.readdir(keyDirectoryPath);
+
+    const keyPath = path.resolve(keyDirectoryPath, files[0]);
+
+    const privateKeyPem = await fs.readFile(keyPath);
+
+    const privateKey = crypto.createPrivateKey(privateKeyPem);
+
+    return signers.newPrivateKeySigner(privateKey);
+
+}
+
+
+
+// --- Main execution ---
+
+main().catch(error => {
+
+    console.error('******** FAILED to run the application', error);
+
+    process.exitCode = 1;
+
+});
+```
+
+
+the test app version to measure the throughput 
+
+```
+
+'use strict';
+
+const { connect, Contract, Identity, Signer, signers } = require('@hyperledger/fabric-gateway');
+const grpc = require('@grpc/grpc-js');
+const crypto = require('crypto');
+const fs = require('fs').promises;
+const path = require('path');
+
+// --- Configuration ---
+const channelName = 'mychannel';
+const chaincodeName = 'amprovenance';
+const mspId = 'Org1MSP';
+
+// --- Test Parameters ---
+const throughputTestCount = 100; // Number of transactions to send for TPS test
+const naiveThroughputPayloadSize = 10 * 1024; // 10KB for naive model TPS test
+
+// --- Connection Details ---
+const cryptoPath = path.resolve(__dirname, '..', 'fabric', 'fabric-samples', 'test-network', 'organizations', 'peerOrganizations', 'org1.example.com');
+const keyDirectoryPath = path.resolve(cryptoPath, 'users', 'Admin@org1.example.com', 'msp', 'keystore');
+const certPath = path.resolve(cryptoPath, 'users', 'Admin@org1.example.com', 'msp', 'signcerts', 'cert.pem');
+const tlsCertPath = path.resolve(cryptoPath, 'peers', 'peer0.org1.example.com', 'tls', 'ca.crt');
+const peerEndpoint = 'localhost:7051';
+const peerHostAlias = 'peer0.org1.example.com';
+
+async function main() {
+    console.log('--- Starting Comprehensive Performance & Throughput Test ---');
+
+    const client = await newGrpcConnection();
+    const gateway = connect({
+        client,
+        identity: await newIdentity(),
+        signer: await newSigner(),
+        evaluateOptions: () => ({ deadline: Date.now() + 5000 }),
+        endorseOptions: () => ({ deadline: Date.now() + 15000 }),
+        submitOptions: () => ({ deadline: Date.now() + 120000 }),
+        commitStatusOptions: () => ({ deadline: Date.now() + 120000 }),
+    });
+
+    const latencyResults = [];
+    const throughputResults = {};
+
+    try {
+        const contract = gateway.getNetwork(channelName).getContract(chaincodeName);
+
+        // --- Warm-up Run ---
+        console.log('--- Performing warm-up transaction... ---');
+        await testLightweightLatency(contract, true);
+
+        // === Lightweight Model Latency ===
+        console.log(`\n--- Testing Lightweight Model Latency ---`);
+        const lightweightLatency = await testLightweightLatency(contract);
+        latencyResults.push({
+            'Test Case': 'Lightweight Model (Latency)',
+            'Payload Size': '~270 Bytes',
+            'Latency (ms)': lightweightLatency.toFixed(2),
+        });
+        await sleep(1000);
+
+        // === Naive Model Latency ===
+        console.log(`\n--- Testing Naive Model Latency (1MB) ---`);
+        const naiveLatency = await testNaiveLatency(contract, 1 * 1024 * 1024);
+        latencyResults.push({
+            'Test Case': 'Naive Model (Latency)',
+            'Payload Size': '1 MB',
+            'Latency (ms)': naiveLatency > 0 ? naiveLatency.toFixed(2) : 'FAILED',
+        });
+        await sleep(1000);
+
+        // === Throughput Tests ===
+        console.log(`\n--- Testing Lightweight Model Throughput (${throughputTestCount} TXs) ---`);
+        throughputResults.lightweightTPS = await testThroughput(contract, 'lightweight');
+
+        console.log(`\n--- Testing Naive Model Throughput (${throughputTestCount} TXs) ---`);
+        throughputResults.naiveTPS = await testThroughput(contract, 'naive', naiveThroughputPayloadSize);
+
+    } finally {
+        gateway.close();
+        client.close();
+        printFinalResults(latencyResults, throughputResults);
+    }
+}
+
+// --- Test Functions ---
+
+async function testLightweightLatency(contract, isWarmup = false) {
+    const assetId = `LATENCY_BATCH_${Date.now()}`;
+    const offChainHash = crypto.createHash('sha256').update('small payload').digest('hex');
+    const startTime = process.hrtime.bigint();
+    try {
+        await contract.submitTransaction('CreateMaterialCertification', assetId, 'Ti6Al4V', 'POWDER-SDK-LATENCY', 'SupplierCorpMSP', offChainHash);
+        const endTime = process.hrtime.bigint();
+        const latencyMs = Number((endTime - startTime) / 1000000n);
+        if (isWarmup) { console.log('Warm-up complete.'); return 0; }
+        console.log(`Run complete. Latency: ${latencyMs} ms`);
+        return latencyMs;
+    } catch (error) {
+        if (!isWarmup) console.error('Lightweight latency test failed:', error);
+        return -1;
+    }
+}
+
+async function testNaiveLatency(contract, payloadSize) {
+    const assetId = `LATENCY_NAIVE_${Date.now()}`;
+    const payload = crypto.randomBytes(payloadSize).toString('base64');
+    console.log(`Submitting naive transaction with ${payloadSize / (1024 * 1024)}MB payload...`);
+    const startTime = process.hrtime.bigint();
+    try {
+        await contract.submitTransaction('CreateMaterialCertification_Naive', assetId, 'SS316L', 'POWDER-SDK-NAIVE-LATENCY', 'SupplierCorpMSP', payload);
+        const endTime = process.hrtime.bigint();
+        const latencyMs = Number((endTime - startTime) / 1000000n);
+        console.log(`*** SUCCESS: Naive latency transaction committed. Latency: ${latencyMs} ms`);
+        return latencyMs;
+    } catch (error) {
+        console.error(`*** FAILED: Naive latency transaction failed. Error:`, error.message.split('\n')[0]);
+        return -1;
+    }
+}
+
+async function testThroughput(contract, modelType, payloadSize = 0) {
+    const promises = [];
+    console.log(`Submitting ${throughputTestCount} concurrent transactions...`);
+    const startTime = process.hrtime.bigint();
+
+    for (let i = 0; i < throughputTestCount; i++) {
+        const assetId = `TPS_${modelType.toUpperCase()}_${Date.now()}_${i}`;
+        let txPromise;
+
+        if (modelType === 'lightweight') {
+            const offChainHash = crypto.createHash('sha256').update(`tps_payload_${i}`).digest('hex');
+            txPromise = contract.submitTransaction('CreateMaterialCertification', assetId, 'TPS-Mat', `TPS-Batch-${i}`, 'TPS-Supplier', offChainHash);
+        } else { // naive model
+            const payload = crypto.randomBytes(payloadSize).toString('base64');
+            txPromise = contract.submitTransaction('CreateMaterialCertification_Naive', assetId, 'TPS-Mat-Naive', `TPS-Batch-Naive-${i}`, 'TPS-Supplier-Naive', payload);
+        }
+        promises.push(txPromise);
+    }
+
+    try {
+        await Promise.all(promises);
+        const endTime = process.hrtime.bigint();
+        const totalTimeMs = Number((endTime - startTime) / 1000000n);
+        const totalTimeSec = totalTimeMs / 1000;
+        const tps = throughputTestCount / totalTimeSec;
+        
+        console.log(`*** SUCCESS: All ${throughputTestCount} transactions committed.`);
+        console.log(`Total time: ${totalTimeSec.toFixed(2)} seconds.`);
+        console.log(`Throughput: ${tps.toFixed(2)} TPS`);
+        return tps;
+    } catch (error) {
+        console.error(`*** FAILED: Throughput test failed for ${modelType} model. Error:`, error.message.split('\n')[0]);
+        return 0;
+    }
+}
+
+// --- Helper & Printing Functions ---
+
+function printFinalResults(latencyResults, throughputResults) {
+    console.log('\n\n==================== FINAL PERFORMANCE & THROUGHPUT RESULTS ====================');
+    console.log('\n--- Latency Results (Single Transaction) ---');
+    console.table(latencyResults);
+    
+    console.log('\n--- Throughput Results (Sustained Load) ---');
+    const tpsData = [
+        { Model: 'Lightweight Model', 'Payload per TX': '~270 Bytes', 'Throughput (TPS)': throughputResults.lightweightTPS.toFixed(2) },
+        { Model: 'Naive Model', 'Payload per TX': `${(naiveThroughputPayloadSize / 1024).toFixed(0)} KB`, 'Throughput (TPS)': throughputResults.naiveTPS.toFixed(2) }
+    ];
+    console.table(tpsData);
+    console.log('================================================================================');
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+async function newGrpcConnection() {
+    const tlsRootCert = await fs.readFile(tlsCertPath);
+    const tlsCredentials = grpc.credentials.createSsl(tlsRootCert);
+    return new grpc.Client(peerEndpoint, tlsCredentials, {
+        'grpc.ssl_target_name_override': peerHostAlias,
+        'grpc.max_send_message_length': -1,
+        'grpc.max_receive_message_length': -1,
+    });
+}
+async function newIdentity() {
+    const cert = await fs.readFile(certPath);
+    return { mspId, credentials: cert };
+}
+async function newSigner() {
+    const files = await fs.readdir(keyDirectoryPath);
+    const keyPath = path.resolve(keyDirectoryPath, files[0]);
+    const privateKeyPem = await fs.readFile(keyPath);
+    const privateKey = crypto.createPrivateKey(privateKeyPem);
+    return signers.newPrivateKeySigner(privateKey);
+}
+
+main().catch(error => {
+    console.error('******** FAILED to run the application', error);
+    process.exitCode = 1;
+});
+```
