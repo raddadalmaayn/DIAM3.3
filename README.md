@@ -1933,6 +1933,30 @@ Throughput: 9.81 TPS
 the table 
 
 ![image](https://github.com/user-attachments/assets/185ac4fa-2bbd-4123-950e-08c12517e7f6)
+
+
+with changing the network configuration to this 
+``` BatchSize:
+    # Max Message Count
+    # The maximum number of messages to permit in a batch.
+    MaxMessageCount: 500
+
+    # Absolute Max Bytes
+    # The absolute maximum number of bytes allowed for
+    # the serialized messages in a batch.
+    AbsoluteMaxBytes: 99 MB
+
+    # Preferred Max Bytes
+    # The preferred maximum number of bytes allowed for
+    # the serialized messages in a batch. A message larger than the
+    # preferred max bytes will result in a batch larger than preferred max
+    # bytes.
+    PreferredMaxBytes: 4096 KB
+    ```
+    and the results were totally diffrent and amazing 
+<img width="1572" height="400" alt="image" src="https://github.com/user-attachments/assets/86a9a841-6655-46d7-91eb-f52811642908" />
+
+    
 -->
 
 The Table (with running the code multiple times the average of the TPS for the 10KB is 128 and the rest is about the same of the table) 
