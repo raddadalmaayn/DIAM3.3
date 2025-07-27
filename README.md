@@ -1963,3 +1963,89 @@ The Table (with running the code multiple times the average of the TPS for the 1
 ![image](https://github.com/user-attachments/assets/a76dec41-6977-4857-9b7e-d355daf3b9b6)
 
 
+then I have changed the network configuration to 
+``` YAML
+BatchSize:
+    # Max Message Count
+    # The maximum number of messages to permit in a batch.
+    MaxMessageCount: 500
+
+    # Absolute Max Bytes
+    # The absolute maximum number of bytes allowed for
+    # the serialized messages in a batch.
+    AbsoluteMaxBytes: 99 MB
+
+    # Preferred Max Bytes
+    # The preferred maximum number of bytes allowed for
+    # the serialized messages in a batch. A message larger than the
+    # preferred max bytes will result in a batch larger than preferred max
+    # bytes.
+    PreferredMaxBytes: 4096 KB
+```
+
+and the results were diffrent and having major amazing output 
+
+``` bash
+Testing Throughput: Lightweight (10000 TXs @ 500 concurrency) ---
+Submitting 10000 transactions in chunks of 500, with 0KB payload each...
+Batch 1 of 20 completed.
+Batch 2 of 20 completed.
+Batch 3 of 20 completed.
+Batch 4 of 20 completed.
+Batch 5 of 20 completed.
+Batch 6 of 20 completed.
+Batch 7 of 20 completed.
+Batch 8 of 20 completed.
+Batch 9 of 20 completed.
+Batch 10 of 20 completed.
+Batch 11 of 20 completed.
+Batch 12 of 20 completed.
+Batch 13 of 20 completed.
+Batch 14 of 20 completed.
+Batch 15 of 20 completed.
+Batch 16 of 20 completed.
+Batch 17 of 20 completed.
+Batch 18 of 20 completed.
+Batch 19 of 20 completed.
+Batch 20 of 20 completed.
+*** SUCCESS: All 10000 transactions committed.
+Total time: 21.22 seconds.
+Throughput: 471.30 TPS
+
+--- Testing Throughput: Naive (10KB) (100 TXs @ 50 concurrency) ---
+Submitting 100 transactions in chunks of 50, with 10KB payload each...
+Batch 1 of 2 completed.
+Batch 2 of 2 completed.
+*** SUCCESS: All 100 transactions committed.
+Total time: 0.36 seconds.
+Throughput: 277.01 TPS
+
+--- Testing Throughput: Naive (50KB) (100 TXs @ 50 concurrency) ---
+Submitting 100 transactions in chunks of 50, with 50KB payload each...
+Batch 1 of 2 completed.
+Batch 2 of 2 completed.
+*** SUCCESS: All 100 transactions committed.
+Total time: 0.85 seconds.
+Throughput: 116.96 TPS
+
+--- Testing Throughput: Naive (150KB) (50 TXs @ 20 concurrency) ---
+Submitting 50 transactions in chunks of 20, with 150KB payload each...
+Batch 1 of 3 completed.
+Batch 2 of 3 completed.
+Batch 3 of 3 completed.
+*** SUCCESS: All 50 transactions committed.
+Total time: 1.05 seconds.
+Throughput: 47.39 TPS
+
+--- Testing Throughput: Naive (1MB) (20 TXs @ 10 concurrency) ---
+Submitting 20 transactions in chunks of 10, with 1024KB payload each...
+Batch 1 of 2 completed.
+Batch 2 of 2 completed.
+*** SUCCESS: All 20 transactions committed.
+Total time: 2.06 seconds.
+Throughput: 9.73 TPS
+
+```
+and the table shows the results 
+
+<img width="1550" height="391" alt="image" src="https://github.com/user-attachments/assets/0dc7f26e-7df0-47fa-8e95-ac35534ed087" />
